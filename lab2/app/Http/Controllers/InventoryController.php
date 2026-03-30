@@ -65,6 +65,11 @@ class InventoryController extends Controller
         return redirect()->route('inventory.index')
             ->with('success', 'Moved to trash.');
     }
+    public function critical()
+    {
+        $items = Inventory::whereColumn('quantity', '<=', 'minimum_stock')->paginate(10);
+        return view('inventory.critical', compact('items'));
+    }
 
     // TRASH
     public function trashed()
