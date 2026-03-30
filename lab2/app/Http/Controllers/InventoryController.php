@@ -40,14 +40,14 @@ class InventoryController extends Controller
 
         $items = $query->latest()->paginate(10)->withQueryString();
         $criticalCount = Inventory::whereColumn('quantity', '<=', 'minimum_stock')->count();
-
+        $criticalItems = Inventory::whereColumn('quantity', '<=', 'minimum_stock')->get();
         $categories = Inventory::select('category')
                     ->distinct()
                     ->whereNotNull('category')
                     ->orderBy('category')
                     ->pluck('category');
 
-        return view('inventory.index', compact('items', 'criticalCount', 'categories'));
+        return view('inventory.index', compact('items', 'criticalCount', 'criticalItems', 'categories'));
     }
 
     public function create()

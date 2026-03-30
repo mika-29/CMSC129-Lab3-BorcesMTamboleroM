@@ -19,18 +19,96 @@
                 <h3 class="fw-bold">{{ $items->total() }}</h3>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="stat-card border-danger">
-                <small class="text-muted">Critical Status</small>
-                <h3 class="fw-bold text-danger">{{ $criticalCount ?? 0 }} <i class="fas fa-exclamation-triangle ms-2"></i></h3>
-                <small class="text-danger">(LOW/OUT)</small>
+         <div class="col-md-4">
+            <div class="stat-card h-100 border-danger"
+                 style="cursor:pointer; transition: transform 0.2s, box-shadow 0.2s;"
+                 onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(239,68,68,0.3)'"
+                 onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'"
+                 data-bs-toggle="modal" data-bs-target="#criticalModal">
+                <div class="d-flex justify-content-between align-items-start">
+                    <small class="text-muted text-uppercase fw-semibold" style="letter-spacing:.05em">Critical Status</small>
+                    <span class="badge bg-danger bg-opacity-25 text-danger px-2 py-1">
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </span>
+                </div>
+                <h3 class="fw-bold mt-2 mb-0 text-danger">{{ $criticalCount ?? 0 }}</h3>
+                <small class="text-danger">
+                    @if(($criticalCount ?? 0) > 0)
+                        {{ $criticalCount }} item(s) need attention · <span class="text-decoration-underline">View all</span>
+                    @else
+                        All items sufficiently stocked
+                    @endif
+                </small>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="stat-card">
                 <small class="text-muted">Newest Addition</small>
                 <h3 class="fw-bold">{{ $items->first()->name ?? 'N/A' }}</h3>
                 <small class="text-muted">Added recently</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="criticalModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background-color:#1f2937; border:1px solid #374151;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title text-danger fw-bold">
+                        <i class="fas fa-triangle-exclamation me-2"></i> Critical Items
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    @if($criticalItems->isEmpty())
+                        <p class="text-muted fst-italic text-center py-4">
+                            <i class="fas fa-check-circle text-success fa-2x mb-2 d-block"></i>
+                            No critical items. All stock levels are sufficient.
+                        </p>
+                    @else
+                        <p class="text-muted mb-3">These items are at or below their minimum stock level and require restocking.</p>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead style="background-color:#111827;">
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Category</th>
+                                        <th>Qty</th>
+                                        <th>Min Stock</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($criticalItems as $critical)
+                                    <tr>
+                                        <td class="fw-bold">{{ $critical->name }}</td>
+                                        <td class="text-muted">{{ $critical->category }}</td>
+                                        <td>{{ $critical->quantity }}</td>
+                                        <td>{{ $critical->minimum_stock }}</td>
+                                        <td>
+                                            @if($critical->quantity <= 0)
+                                                <span class="badge badge-out-of-stock">OUT OF STOCK</span>
+                                            @else
+                                                <span class="badge badge-low-stock">LOW STOCK</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('inventory.edit', $critical) }}" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-edit"></i> Restock
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>

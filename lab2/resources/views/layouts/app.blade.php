@@ -103,27 +103,6 @@
         >
           <span class="navbar-toggler-icon"></span>
         </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="{{ route('inventory.index') }}">
-                <i class="fas fa-boxes"></i> Supplies
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ route('inventory.create') }}">
-                <i class="fas fa-plus-circle"></i> Add Supply
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-danger" href="{{ route('inventory.critical') }}">
-                <i class="fas fa-triangle-exclamation"></i> Critical Items
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
     </nav>
 
     <!-- Alerts -->
