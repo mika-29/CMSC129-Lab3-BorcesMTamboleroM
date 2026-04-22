@@ -1,8 +1,10 @@
 <?php
+
+use App\Models\InventoryController;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 
-class ChatbotController extends Controller
+class ChatBotController extends InventoryController
 {
     protected $gemini;
 
@@ -20,6 +22,20 @@ class ChatbotController extends Controller
         return response()->json([
             'status' => 'success',
             'reply' => $aiResponse
+        ]);
+    }
+
+    public function sendMessage(Request $request)
+    {
+        $request->validate([
+            'message' => 'required|string|max:500',
+        ]);
+
+        // Your GeminiService call from the previous step
+        $response = $this->gemini->ask($request->message);
+
+        return response()->json([
+            'reply' => $response
         ]);
     }
 }
