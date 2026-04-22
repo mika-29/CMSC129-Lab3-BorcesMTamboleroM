@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\InventoryController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('inventory.index');
@@ -12,3 +13,7 @@ Route::delete('inventory/{id}/force-delete', [InventoryController::class, 'force
 Route::get('inventory/critical', [InventoryController::class, 'critical'])->name('inventory.critical');
 
 Route::resource('inventory', InventoryController::class);
+
+Route::get('/chat', function () {
+    return view('chatbot.index');
+});
