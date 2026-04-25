@@ -411,19 +411,117 @@
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const chatbotToggle = document.getElementById('chatbotToggle');
-        const chatbotBox = document.getElementById('chatbotBox');
-        const chatbotClose = document.getElementById('chatbotClose');
+    let chatHistory = [];
 
-        chatbotToggle.addEventListener('click', function () {
-            chatbotBox.style.display = chatbotBox.style.display === 'block' ? 'none' : 'block';
+    document.addEventListener('DOMContentLoaded', function () {
+        const input   = document.querySelector('.chatbot-footer input');
+        const sendBtn = document.querySelector('.chatbot-footer button');
+        const toggle  = document.getElementById('chatbotToggle');
+        const box     = document.getElementById('chatbotBox');
+        const close   = document.getElementById('chatbotClose');
+
+        // Enable input and button
+        input.disabled   = false;
+        sendBtn.disabled = false;
+
+        // Toggle open/close
+        toggle.addEventListener('click', function () {
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+            if (box.style.display === 'block') input.focus();
         });
 
-        chatbotClose.addEventListener('click', function () {
-            chatbotBox.style.display = 'none';
+        close.addEventListener('click', function () {
+            box.style.display = 'none';
+        });
+
+        // Send on button click or Enter key
+        sendBtn.addEventListener('click', sendMessage);
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') sendMessage();
         });
     });
+
+    function appendMessage(text, role) {
+        const body = document.querySelector('.chatbot-body');
+        const div  = document.createElement('div');
+
+        div.classList.add('chatbot-message', role === 'user' ? 'user' : 'bot');
+        div.style.marginBottom = '10px';
+        div.style.whiteSpace   = 'pre-wrap';
+
+        if (role === 'user') {
+            div.style.marginLeft              = 'auto';
+            div.style.background              = '#1d4ed8';
+            div.style.color                   = 'white';
+            div.style.borderBottomRightRadius = '4px';
+        }
+
+        div.textContent = text;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
+    }
+
+    function setLoading(isLoading) {
+        const input   = document.querySelector('.chatbot-footer input');
+        const sendBtn = document.querySelector('.chatbot-footer button');
+        input.disabled   = isLoading;
+        sendBtn.disabled = isLoading;
+        sendBtn.innerHTML = isLoading
+            ? '<i class="fas fa-circle-notch fa-spin"></i>'
+            : '<i class="fas fa-paper-plane"></i>';
+    }
+
+    async function sendMessage() {
+        const input   = document.querySelector('.chatbot-footer input');
+        const message = input.value.trim();
+        if (!message) return;
+
+        input.value = '';
+        appendMessage(message, 'user');
+        setLoading(true);
+
+        // Typing indicator
+        const body   = document.querySelector('.chatbot-body');
+        const typing = document.createElement('div');
+        typing.id    = 'typingIndicator';
+        typing.classList.add('chatbot-message', 'bot');
+        typing.style.marginBottom = '10px';
+        typing.style.color        = '#9ca3af';
+        typing.innerHTML          = '<i class="fas fa-circle-notch fa-spin me-1"></i> Thinking...';
+        body.appendChild(typing);
+        body.scrollTop = body.scrollHeight;
+
+        try {
+            const response = await fetch('{{ route("chat") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({ message, history: chatHistory }),
+            });
+
+            const data = await response.json();
+            document.getElementById('typingIndicator')?.remove();
+
+            if (data.error) {
+                appendMessage('⚠️ ' + data.error, 'bot');
+            } else {
+                appendMessage(data.reply, 'bot');
+                // Save to history for context
+                chatHistory.push({ role: 'user',  text: message });
+                chatHistory.push({ role: 'model', text: data.reply });
+                // Keep only last 10 entries (5 exchanges)
+                if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
+            }
+        } catch (e) {
+            document.getElementById('typingIndicator')?.remove();
+            appendMessage('⚠️ Something went wrong. Please try again.', 'bot');
+        } finally {
+            setLoading(false);
+            document.querySelector('.chatbot-footer input').focus();
+        }
+    }
 </script>
 {{-- ================================================================ --}}
 
