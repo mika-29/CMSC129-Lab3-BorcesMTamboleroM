@@ -21,7 +21,7 @@ class ChatBotController extends Controller
             'history' => 'nullable|array',
         ]);
 
-        $history = collect($request->history ?? [])->takeLast(10)->values()->toArray();
+        $history = collect($request->history ?? [])->slice(-10)->values()->toArray();
 
         $reply = $this->gemini->ask($request->message, $history);
 
