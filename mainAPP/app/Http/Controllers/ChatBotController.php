@@ -18,12 +18,20 @@ class ChatBotController extends Controller
     {
         $request->validate([
             'message' => 'required|string|max:500',
-            'history' => 'nullable|array',
         ]);
 
-        $history = collect($request->history ?? [])->slice(-10)->values()->toArray();
+        $message = $request->message;
 
-        $reply = $this->gemini->ask($request->message, $history);
+        $history = session()->get('chat_history', []);
+
+        $reply = $this->gemini->ask($message, $history);
+
+        $history[] = ['role' => 'user', 'text' => $message];
+        $history[] = ['role' => 'model', 'text' => $reply];
+
+        $history = array_slice($history, -5);
+
+        session()->put('chat_history', $history);
 
         return response()->json(['reply' => $reply]);
     }
