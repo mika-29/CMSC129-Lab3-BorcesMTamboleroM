@@ -81,6 +81,12 @@ class InventoryQueryService
         return false;
     }
 
+    public function getAllItems()
+    {
+        // Adjust this based on your database structure
+        return Inventory::select('name', 'quantity', 'category')->get()->toArray();
+    }
+
     public function getStockSummary(): array
     {
         $totalItems = Inventory::count();
@@ -111,10 +117,10 @@ class InventoryQueryService
         ];
     }
 
-    public function getExpiringItems(): array
+    public function getExpiringItems(int $days = 30): array
     {
         $items = Inventory::whereNotNull('expiration_date')
-            ->whereDate('expiration_date', '<=', now()->addDays(30))
+            ->whereDate('expiration_date', '<=', now()->addDays($days))
             ->orderBy('expiration_date', 'asc')
             ->limit(10)
             ->get(['name', 'category', 'quantity', 'expiration_date']);
@@ -210,6 +216,21 @@ class InventoryQueryService
             'type' => 'item_quantity',
             'summary' => "The inventory quantity for {$match->name} is {$match->quantity}.",
             'details' => ['name' => $match->name, 'quantity' => $match->quantity, 'category' => $match->category],
+        ];
+    }
+
+    public function getAllCategories(): array
+    {
+        $categories = Inventory::whereNotNull('category')
+            ->distinct()
+            ->pluck('category')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        return [
+            'categories' => $categories,
+            'count' => count($categories),
         ];
     }
 }

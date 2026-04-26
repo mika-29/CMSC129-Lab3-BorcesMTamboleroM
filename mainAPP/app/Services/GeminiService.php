@@ -20,7 +20,7 @@ class GeminiService
     public function ask(string $message, array $history = []): string
     {
         try {
-            $model = Gemini::generativeModel(model: 'gemini-2.0-flash')
+            $model = Gemini::generativeModel(model: 'gemini-2.5-flash')
                 ->withSystemInstruction(Content::parse('You are a helpful inventory assistant. Use the available functions to get inventory data and provide accurate responses.'))
                 ->withTool($this->createInventoryTool());
 
@@ -59,7 +59,7 @@ class GeminiService
             ]);
 
             if (str_contains(strtolower($e->getMessage()), 'quota') || str_contains(strtolower($e->getMessage()), 'billing')) {
-                return 'Quota kana te. Pagod na si Gemini. ';
+                return 'Sorry, I am currently unavailable due to service limitations. Please try again later.';
             }
 
             return 'Sorry, I am unavailable right now. Please try again later.';
@@ -89,10 +89,15 @@ class GeminiService
             ),
             new FunctionDeclaration(
                 name: 'get_expiring_items',
-                description: 'Get items that are expiring soon (within 30 days)',
+                description: 'Get items that are near expiry or expiring soon within a specified number of days',
                 parameters: new Schema(
                     type: DataType::OBJECT,
-                    properties: [],
+                    properties: [
+                        'days' => new Schema(
+                            type: DataType::INTEGER,
+                            description: 'Number of days to check for expiring items (default 30)'
+                        ),
+                    ],
                     required: []
                 )
             ),
@@ -124,6 +129,24 @@ class GeminiService
                     required: ['item_name']
                 )
             ),
+            new FunctionDeclaration(
+                name: 'get_all_inventory_items',
+                description: 'Get a full list of all items in the inventory including their names, categories, and current stock levels',
+                parameters: new Schema(
+                    type: DataType::OBJECT,
+                    properties: [],
+                    required: []
+                )
+            ),
+            new FunctionDeclaration(
+                name: 'get_all_categories',
+                description: 'Get a list of all unique categories in the inventory',
+                parameters: new Schema(
+                    type: DataType::OBJECT,
+                    properties: [],
+                    required: []
+                )
+            ),
         ]);
     }
 
@@ -133,11 +156,13 @@ class GeminiService
         $args = $functionCall->args ?? [];
 
         $result = match ($name) {
+            'get_all_inventory_items' => $this->inventoryQuery->getAllItems(),
             'get_stock_summary' => $this->inventoryQuery->getStockSummary(),
             'get_low_stock_items' => $this->inventoryQuery->getLowStockItems(),
-            'get_expiring_items' => $this->inventoryQuery->getExpiringItems(),
+            'get_expiring_items' => $this->inventoryQuery->getExpiringItems($args['days'] ?? 30),
             'get_category_count' => $this->inventoryQuery->getCategoryCount($args['category'] ?? ''),
             'get_item_quantity' => $this->inventoryQuery->getItemQuantity($args['item_name'] ?? ''),
+            'get_all_categories' => $this->inventoryQuery->getAllCategories(),
             default => ['error' => 'Unknown function'],
         };
 
